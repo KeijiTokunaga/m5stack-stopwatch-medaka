@@ -1,0 +1,17 @@
+# Local build products and development records
+.pio/
+dist/
+*.bin
+*.elf
+*.map
+*.zip
+*.log
+*.ppm
+.DS_Store
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.vscode/
+docs/device-verification.md
