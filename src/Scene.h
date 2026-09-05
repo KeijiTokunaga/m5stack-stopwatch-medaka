@@ -19,35 +19,57 @@ void plant(float root,int height,int index,bool front) {
 }
 
 void drawFish(const Fish &f,int index) {
-  float co=std::cos(f.heading),si=std::sin(f.heading),sc=f.depth;
+  bool neon=f.species==Species::NeonTetra, guppy=f.species==Species::Guppy;
+  float co=std::cos(f.heading),si=std::sin(f.heading),sc=f.depth*(guppy?1.1f:1.f);
   float tail=std::sin(f.phase)*3.7f, wag=std::sin(f.phase-.8f)*1.5f;
   auto point=[&](float x,float y) { return std::pair<int,int>(f.x+(x*co-y*si)*sc,f.y+(x*si+y*co)*sc); };
   auto tri=[&](float ax,float ay,float bx,float by,float cx,float cy,uint16_t c) {
     auto a=point(ax,ay),b=point(bx,by),d=point(cx,cy); frame.fillTriangle(a.first,a.second,b.first,b.second,d.first,d.second,c);
   };
-  bool gold=index%3==0;
+  bool gold=index%2==0;
   uint16_t fin=gold?color(119,115,66):color(72,119,117);
   uint16_t body=gold?color(206*sc,174*sc,94*sc):color(162*sc,192*sc,180*sc);
   uint16_t back=gold?color(130,120,64):color(76,121,119);
-  tri(-14,wag,-24,tail-5,-23,tail+5,fin);
-  for(int ray=-4;ray<=4;ray+=2) {
+  if(neon) { body=color(90,156,174); back=color(34,85,108); fin=color(54,113,130); }
+  if(guppy) { body=color(216,181,112); back=color(106,104,73); fin=color(233,110,54); }
+  if(guppy) {
+    // A broad, flexible fan tail with rays and spots distinguishes the guppy.
+    for(int ray=0;ray<8;++ray) {
+      float y=-11+ray*2.75f, ny=y+2.75f;
+      float tip=-29+std::sin(f.phase+ray*.5f)*1.6f;
+      tri(-13,wag,tip,tail+y,tip,tail+ny,ray%2?color(240,146,57):color(207,73,55));
+      auto a=point(-14,wag),b=point(tip,tail+y);
+      frame.drawLine(a.first,a.second,b.first,b.second,color(150,67,53));
+      if(ray%2==0) { auto spot=point(-24,tail+y*.7f); frame.fillCircle(spot.first,spot.second,1,color(51,75,81)); }
+    }
+  } else tri(-14,wag,-24,tail-5,-23,tail+5,fin);
+  for(int ray=-4;!guppy && ray<=4;ray+=2) {
     auto a=point(-14,wag),b=point(-23,tail+ray);
     frame.drawLine(a.first,a.second,b.first,b.second,back);
   }
-  tri(-3,-3,-7,-7,-11,-2,fin);
+  tri(-3,-3,-7,guppy?-12:-7,-11,-2,fin);
   tri(3,2,-3,7+std::sin(f.phase)*1.2f,-7,2,fin);
   const float xs[]={-15,-11,-6,0,6,10,14};
   const float widths[]={.4f,1.2f,2.6f,3.8f,3.5f,2.5f,.5f};
+  float bodyHeight=neon?1.45f:guppy?1.15f:1.f;
   for(int j=0;j<6;++j) {
     float x=xs[j],nx=xs[j+1];
     float bend=wag*std::max(0.f,-x)/15,nb=wag*std::max(0.f,-nx)/15;
-    tri(x,bend-widths[j],nx,nb-widths[j+1],nx,nb+widths[j+1],body);
-    tri(x,bend-widths[j],nx,nb+widths[j+1],x,bend+widths[j],body);
-    auto a=point(x,bend-widths[j]),b=point(nx,nb-widths[j+1]);
+    tri(x,bend-widths[j]*bodyHeight,nx,nb-widths[j+1]*bodyHeight,nx,nb+widths[j+1]*bodyHeight,body);
+    tri(x,bend-widths[j]*bodyHeight,nx,nb+widths[j+1]*bodyHeight,x,bend+widths[j]*bodyHeight,body);
+    auto a=point(x,bend-widths[j]*bodyHeight),b=point(nx,nb-widths[j+1]*bodyHeight);
     frame.drawLine(a.first,a.second,b.first,b.second,back);
   }
+  if(neon) {
+    tri(-11,1,2,1,1,5,color(235,49,67));
+    tri(-11,1,1,5,-9,3,color(235,49,67));
+    for(int line=-1;line<=0;++line) {
+      auto a=point(-11,line),b=point(10,line);
+      frame.drawLine(a.first,a.second,b.first,b.second,color(40,231,246));
+    }
+  }
   auto a=point(-9,0),b=point(9,1);
-  frame.drawLine(a.first,a.second,b.first,b.second,gold?color(244,213,140):color(206,227,216));
+  if(!neon) frame.drawLine(a.first,a.second,b.first,b.second,gold?color(244,213,140):color(206,227,216));
   auto eye=point(9,-1); frame.fillCircle(eye.first,eye.second,2,color(16,32,30));
   frame.drawPixel(eye.first,eye.second-1,color(242,240,195));
   auto gill=point(5,2),gill2=point(4,-2); frame.drawLine(gill.first,gill.second,gill2.first,gill2.second,fin);

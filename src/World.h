@@ -6,7 +6,16 @@
 namespace aquarium {
 constexpr float kPi = 3.14159265359f;
 inline float clamp(float v, float lo, float hi) { return std::max(lo, std::min(v, hi)); }
-struct Fish { float x, y, vx, vy, heading, phase, depth, urge; float bite=0; };
+enum class Species : uint8_t { Medaka, NeonTetra, Guppy };
+struct SwimStyle { float cruise, turn, cadence, schooling, restDepth; };
+inline SwimStyle swimStyle(Species s) {
+  switch(s) {
+    case Species::NeonTetra: return {49,3.2f,1.25f,1.8f,245};
+    case Species::Guppy: return {34,1.9f,.72f,.65f,185};
+    default: return {42,2.5f,1,1,215};
+  }
+}
+struct Fish { float x, y, vx, vy, heading, phase, depth, urge; float bite=0; Species species=Species::Medaka; };
 struct Food { float x=0, y=0, life=0; bool wet=false; };
 class World {
 public:
@@ -18,6 +27,7 @@ public:
   Fish fish[COUNT];
   Food food[FOOD_MAX];
   unsigned eaten=0;
+  unsigned eatenBySpecies[3]{};
   float feedCooldown=0;
   int foodCount() const { int n=0; for(const auto &p:food) if(p.life>0) ++n; return n; }
   void feed(float x) {
@@ -32,7 +42,9 @@ public:
   uint32_t seed = 0x4d454441;
   float random() { seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5; return (seed & 0xffffff) / 16777216.f; }
   World() {
+    int index=0;
     for (auto &f : fish) {
+      f.species=static_cast<Species>(index++%3);
       f.x = 90 + random()*280; f.y = 155 + random()*210;
       f.heading = random()*2*kPi; f.vx = std::cos(f.heading)*20; f.vy = std::sin(f.heading)*8;
       f.phase = random()*2*kPi; f.depth = .6f + random()*.4f; f.urge = random();
@@ -102,13 +114,13 @@ public:
     }
     Fish old[COUNT]; std::copy(fish,fish+COUNT,old);
     for(int i=0;i<COUNT;++i) {
-      auto &f=fish[i]; float fx=0,fy=0, mx=0,my=0,avx=0,avy=0; int neighbors=0;
+      auto &f=fish[i]; const auto style=swimStyle(f.species); float fx=0,fy=0, mx=0,my=0,avx=0,avy=0; int neighbors=0;
       for(int j=0;j<COUNT;++j) if(i!=j) {
         float dx=old[j].x-f.x,dy=old[j].y-f.y,d2=dx*dx+dy*dy;
-        if(d2<150*150) { mx+=old[j].x; my+=old[j].y; avx+=old[j].vx; avy+=old[j].vy; ++neighbors; }
+        if(d2<150*150 && old[j].species==f.species) { mx+=old[j].x; my+=old[j].y; avx+=old[j].vx; avy+=old[j].vy; ++neighbors; }
         if(d2<42*42) { fx-=dx*150/(d2+16); fy-=dy*150/(d2+16); }
       }
-      if(neighbors) { fx+=(mx/neighbors-f.x)*.08f+(avx/neighbors-f.vx)*.16f; fy+=(my/neighbors-f.y)*.07f+(avy/neighbors-f.vy)*.12f; }
+      if(neighbors) { fx+=((mx/neighbors-f.x)*.08f+(avx/neighbors-f.vx)*.16f)*style.schooling; fy+=((my/neighbors-f.y)*.07f+(avy/neighbors-f.vy)*.12f)*style.schooling; }
       f.bite=std::max(0.f,f.bite-dt);
       int targetFood=-1; float nearest=1e9f;
       for(int j=0;j<FOOD_MAX;++j) if(food[j].life>0 && food[j].wet) {
@@ -118,34 +130,35 @@ public:
       bool feeding=targetFood>=0;
       if(feeding) {
         auto &p=food[targetFood]; float d=std::sqrt(nearest);
-        if(d<17 && f.bite<=0) { p.life=0; ++eaten; f.bite=.65f; }
+        if(d<17 && f.bite<=0) { p.life=0; ++eaten; ++eatenBySpecies[static_cast<int>(f.species)]; f.bite=.65f; }
         else {
           float desired=std::min(68.f,d*2.4f);
           fx+=((p.x-f.x)/std::max(1.f,d)*desired-f.vx)*2.8f;
           fy+=((p.y-f.y)/std::max(1.f,d)*desired-f.vy)*2.8f;
         }
       }
+      if(!feeding) fy+=(style.restDepth-f.y)*.035f;
       float radial=std::sqrt((f.x-233)*(f.x-233)+(f.y-233)*(f.y-233));
       if(radial>166) { fx-=(f.x-233)*(radial-166)*.025f; fy-=(f.y-233)*(radial-166)*.025f; }
       float top=surface(f.x)+(feeding?0:32);
       if(f.y<top+25) fy+=(top+25-f.y)*1.8f;
       if(f.y>382) fy-=(f.y-382)*1.8f;
       f.urge-=dt;
-      if(f.urge<0) f.urge=.7f+random()*1.9f;
+      if(f.urge<0) f.urge=(.7f+random()*1.9f)/style.cadence;
       float burst = f.urge<.27f ? 1.f : .12f;
-      fx+=std::cos(f.heading)*(12+alarm*60)*burst+std::sin(time*.63f+i*2)*8;
+      fx+=std::cos(f.heading)*(12*style.cadence+alarm*60)*burst+std::sin(time*.63f+i*2)*8;
       fy+=std::sin(time*.81f+i*3)*5+alarm*14;
       f.vx+=(fx-f.vx*.20f+current*.28f)*dt; f.vy+=(fy-f.vy*.38f)*dt;
-      float speed=std::sqrt(f.vx*f.vx+f.vy*f.vy), limit=(feeding?72:42)+alarm*65;
+      float speed=std::sqrt(f.vx*f.vx+f.vy*f.vy), limit=(feeding?72:style.cruise)+alarm*65;
       if(speed>limit) { f.vx*=limit/speed; f.vy*=limit/speed; }
-      if(speed>2) { float delta=std::atan2(f.vy,f.vx)-f.heading; delta=std::atan2(std::sin(delta),std::cos(delta)); f.heading+=clamp(delta,-dt*2.5f,dt*2.5f); }
+      if(speed>2) { float delta=std::atan2(f.vy,f.vx)-f.heading; delta=std::atan2(std::sin(delta),std::cos(delta)); f.heading+=clamp(delta,-dt*style.turn,dt*style.turn); }
       f.x+=f.vx*dt; f.y+=f.vy*dt;
       float dx=f.x-233,dy=f.y-233,d=std::sqrt(dx*dx+dy*dy);
       if(d>199) { f.x=233+dx*199/d; f.y=233+dy*199/d; }
       f.x=clamp(f.x,45,421);
       float edge=std::sqrt(199*199-(f.x-233)*(f.x-233));
       f.y=clamp(f.y,std::max(surface(f.x)+20,233-edge),std::min(413.f,233+edge));
-      f.phase+=dt*(6+speed*.18f+burst*5);
+      f.phase+=dt*(6+speed*.18f+burst*5)*style.cadence;
     }
   }
 };

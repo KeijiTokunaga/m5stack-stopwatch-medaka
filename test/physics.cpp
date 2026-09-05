@@ -4,6 +4,8 @@
 using namespace aquarium;
 int main() {
   World w;
+  int population[3]{};for(auto &f:w.fish)++population[static_cast<int>(f.species)];
+  for(int n:population)assert(n==3);
   constexpr float dt=1.f/120;
   // Ten minutes: alternating violent shaking and rest, plus repeated taps.
   for(int n=0;n<72000;++n) {
@@ -45,6 +47,14 @@ int main() {
     assert(fed.eaten>=4); assert(fed.foodCount()<=2);
     for(int n=0;n<1800;++n) fed.step(dt);
     assert(fed.foodCount()==0);
+  }
+  for(auto species : {Species::Medaka,Species::NeonTetra,Species::Guppy}) {
+    World single;
+    for(auto &f:single.fish) f.species=species;
+    single.feed(233);
+    for(int n=0;n<1800;++n) { single.sense(0,1,0,dt);single.step(dt); }
+    assert(single.eatenBySpecies[static_cast<int>(species)]>=4);
+    std::printf("Species %d: %u pellets eaten\n",int(species),single.eaten);
   }
   World expiry; expiry.feed(155);
   for(auto &p:expiry.food) if(p.life>0) {p.life=.001f;p.wet=false;}

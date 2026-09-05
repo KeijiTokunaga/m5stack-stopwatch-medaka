@@ -2,7 +2,7 @@
 
 # Medaka — A palm-sized aquarium
 
-A quiet aquarium with nine medaka for M5Stack StopWatch C152. Accelerometer and three-axis gyroscope input make the water and plants respond to shaking and twisting the device.
+A quiet aquarium with three medaka, three neon tetras and three guppies for M5Stack StopWatch C152. Accelerometer and three-axis gyroscope input make the water and plants respond to shaking and twisting the device.
 
 ![Aquarium preview](docs/preview.png)
 
@@ -22,6 +22,16 @@ A quiet aquarium with nine medaka for M5Stack StopWatch C152. Accelerometer and 
 - Swaying plants, depth shading and subtle lighting.
 - No clock or menu overlay during viewing, and no sound or vibration.
 
+## Fish
+
+| Species | Appearance and in-app motion |
+| --- | --- |
+| Medaka × 3 | Slender silver or gold bodies with burst-and-glide swimming |
+| Neon tetra × 3 | Bright blue stripes and red accents; quicker movement and stronger same-species schooling |
+| Guppy × 3 | Broad patterned orange fan tails with slower tail beats |
+
+All species respond to food. These are stylized behaviors for the viewing experience.
+
 ## Controls
 
 | Action | Response |
@@ -37,9 +47,9 @@ Settings are not persisted: restarting returns to normal viewing. If IMU initial
 
 ## Feeding
 
-Pellets fall into the water and slowly sink. Medaka gather around nearby pellets, eat them, then return to normal swimming. Each click adds six pellets, with a maximum of 24 active pellets and a minimum 0.35-second interval. Uneaten pellets disappear after 24 seconds. Holding yellow A changes brightness without adding food.
+Pellets fall into the water and slowly sink. All three species gather around nearby pellets, eat them, then return to normal swimming. Each click adds six pellets, with a maximum of 24 active pellets and a minimum 0.35-second interval. Uneaten pellets disappear after 24 seconds. Holding yellow A changes brightness without adding food.
 
-![Medaka gathering around food](docs/feeding.gif)
+![Three species gathering around food](docs/feeding.gif)
 
 *Simulation using shared firmware code, not a recording of the device.*
 
@@ -70,6 +80,7 @@ Preview frames are written to `/tmp/medaka-frame-000.ppm` and subsequent numbere
 
 Verified:
 
+- Each species in isolation consumes all six pellets within 15 seconds; the mixed population passes the ten-minute stress simulation.
 - Left and right feeding tests consume all six pellets within 15 seconds; rate limits, pellet capacity and expiry are checked.
 
 - Target build, USB flashing and all transferred hashes.
