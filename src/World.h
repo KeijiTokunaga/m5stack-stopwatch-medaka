@@ -6,15 +6,29 @@
 namespace aquarium {
 constexpr float kPi = 3.14159265359f;
 inline float clamp(float v, float lo, float hi) { return std::max(lo, std::min(v, hi)); }
-struct Fish { float x, y, vx, vy, heading, phase, depth, urge; };
+struct Fish { float x, y, vx, vy, heading, phase, depth, urge; float bite=0; };
+struct Food { float x=0, y=0, life=0; bool wet=false; };
 class World {
 public:
-  static constexpr int N = 65, COUNT = 9;
+  static constexpr int N = 65, COUNT = 9, FOOD_MAX = 24;
   float wave[N]{}, velocity[N]{}, time = 0, tilt = 0, current = 0, alarm = 0;
   float gx = 0, gy = 1, gz = 0, activity = 0;
   float rollRate=0, pitchRate=0, yawRate=0, rotationalKick=0;
   float slosh=0, sloshSpeed=0, forcing=0, crossForcing=0;
   Fish fish[COUNT];
+  Food food[FOOD_MAX];
+  unsigned eaten=0;
+  float feedCooldown=0;
+  int foodCount() const { int n=0; for(const auto &p:food) if(p.life>0) ++n; return n; }
+  void feed(float x) {
+    if(!std::isfinite(x) || feedCooldown>0) return;
+    feedCooldown=.35f; int added=0;
+    for(auto &p:food) if(p.life<=0 && added<6) {
+      p.x=clamp(x+(random()-.5f)*44,110,356);
+      p.y=std::max(18.f,surface(p.x)-26-random()*16);
+      p.life=24; p.wet=false; ++added;
+    }
+  }
   uint32_t seed = 0x4d454441;
   float random() { seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5; return (seed & 0xffffff) / 16777216.f; }
   World() {
@@ -74,6 +88,18 @@ public:
     float mean = 0;
     for(int i=0;i<N;++i) { velocity[i]=next[i]; wave[i]=clamp(wave[i]+velocity[i]*dt,-48,48); mean+=wave[i]; }
     for(auto &h:wave) h -= mean/N; // Preserve water volume after impulses.
+    feedCooldown=std::max(0.f,feedCooldown-dt);
+    for(auto &p:food) if(p.life>0) {
+      p.life-=dt;
+      if(!p.wet) {
+        p.y+=90*dt;
+        if(p.y>=surface(p.x)+26) { p.wet=true; ripple(p.x,22); }
+      } else {
+        p.x=clamp(p.x+(current*.05f+std::sin(time+p.x*.03f)*1.5f)*dt,105,361);
+        p.y=std::max(surface(p.x)+26,p.y+2.8f*dt);
+      }
+      if(p.y>395) p.life=0;
+    }
     Fish old[COUNT]; std::copy(fish,fish+COUNT,old);
     for(int i=0;i<COUNT;++i) {
       auto &f=fish[i]; float fx=0,fy=0, mx=0,my=0,avx=0,avy=0; int neighbors=0;
@@ -83,9 +109,25 @@ public:
         if(d2<42*42) { fx-=dx*150/(d2+16); fy-=dy*150/(d2+16); }
       }
       if(neighbors) { fx+=(mx/neighbors-f.x)*.08f+(avx/neighbors-f.vx)*.16f; fy+=(my/neighbors-f.y)*.07f+(avy/neighbors-f.vy)*.12f; }
+      f.bite=std::max(0.f,f.bite-dt);
+      int targetFood=-1; float nearest=1e9f;
+      for(int j=0;j<FOOD_MAX;++j) if(food[j].life>0 && food[j].wet) {
+        float dx=food[j].x-f.x,dy=food[j].y-f.y,d2=dx*dx+dy*dy;
+        if(d2<nearest) { nearest=d2; targetFood=j; }
+      }
+      bool feeding=targetFood>=0;
+      if(feeding) {
+        auto &p=food[targetFood]; float d=std::sqrt(nearest);
+        if(d<17 && f.bite<=0) { p.life=0; ++eaten; f.bite=.65f; }
+        else {
+          float desired=std::min(68.f,d*2.4f);
+          fx+=((p.x-f.x)/std::max(1.f,d)*desired-f.vx)*2.8f;
+          fy+=((p.y-f.y)/std::max(1.f,d)*desired-f.vy)*2.8f;
+        }
+      }
       float radial=std::sqrt((f.x-233)*(f.x-233)+(f.y-233)*(f.y-233));
       if(radial>166) { fx-=(f.x-233)*(radial-166)*.025f; fy-=(f.y-233)*(radial-166)*.025f; }
-      float top=surface(f.x)+32;
+      float top=surface(f.x)+(feeding?0:32);
       if(f.y<top+25) fy+=(top+25-f.y)*1.8f;
       if(f.y>382) fy-=(f.y-382)*1.8f;
       f.urge-=dt;
@@ -94,7 +136,7 @@ public:
       fx+=std::cos(f.heading)*(12+alarm*60)*burst+std::sin(time*.63f+i*2)*8;
       fy+=std::sin(time*.81f+i*3)*5+alarm*14;
       f.vx+=(fx-f.vx*.20f+current*.28f)*dt; f.vy+=(fy-f.vy*.38f)*dt;
-      float speed=std::sqrt(f.vx*f.vx+f.vy*f.vy), limit=42+alarm*65;
+      float speed=std::sqrt(f.vx*f.vx+f.vy*f.vy), limit=(feeding?72:42)+alarm*65;
       if(speed>limit) { f.vx*=limit/speed; f.vy*=limit/speed; }
       if(speed>2) { float delta=std::atan2(f.vy,f.vx)-f.heading; delta=std::atan2(std::sin(delta),std::cos(delta)); f.heading+=clamp(delta,-dt*2.5f,dt*2.5f); }
       f.x+=f.vx*dt; f.y+=f.vy*dt;

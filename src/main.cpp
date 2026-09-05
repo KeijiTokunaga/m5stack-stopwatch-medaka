@@ -31,8 +31,9 @@ void loop() {
       world.sense(data.accel.x,data.accel.y,data.accel.z,elapsed,data.gyro.x,data.gyro.y,data.gyro.z);
     }
   }
-  if(M5.BtnA.wasClicked()) { night=!night; M5.Display.setBrightness(night?70:150); }
-  if(M5.BtnB.wasClicked()) { world.ripple(233,160); }
+  if(M5.BtnA.wasClicked()) world.feed(155);
+  if(M5.BtnA.wasHold()) { night=!night; M5.Display.setBrightness(night?70:150); }
+  if(M5.BtnB.wasClicked()) world.feed(311);
   auto touch=M5.Touch.getDetail();
   if(touch.wasClicked()) world.ripple(touch.x,125);
   accumulator+=elapsed;
@@ -40,7 +41,7 @@ void loop() {
   if(now-lastFrame>=33) { lastFrame=now; render(); }
   if(Serial.available()) {
     char c=Serial.read();
-    if(c=='?') Serial.printf("MEDAKA imu=%d frames=%lu tilt=%.3f activity=%.3f gyroZ=%.1f slosh=%.1f heap=%u\n",imu,(unsigned long)frames,world.tilt,world.activity,world.rollRate,world.slosh,ESP.getFreeHeap());
+    if(c=='?') Serial.printf("MEDAKA imu=%d frames=%lu tilt=%.3f activity=%.3f gyroZ=%.1f slosh=%.1f food=%d eaten=%u heap=%u\n",imu,(unsigned long)frames,world.tilt,world.activity,world.rollRate,world.slosh,world.foodCount(),world.eaten,ESP.getFreeHeap());
   }
   delay(1);
 }

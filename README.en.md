@@ -29,10 +29,19 @@ A quiet aquarium with nine medaka for M5Stack StopWatch C152. Accelerometer and 
 | Tilt sideways | Tilt the free surface |
 | Shake or twist | Excite waves using acceleration and angular velocity |
 | Tap the screen | Create a ripple at that horizontal position |
-| Click yellow A | Toggle normal / dim viewing |
-| Click blue B | Create a central ripple |
+| Click yellow A | Drop six food pellets on the left |
+| Hold yellow A | Toggle normal / dim viewing |
+| Click blue B | Drop six food pellets on the right |
 
 Settings are not persisted: restarting returns to normal viewing. If IMU initialization fails, a message appears while autonomous swimming and touch ripples remain available.
+
+## Feeding
+
+Pellets fall into the water and slowly sink. Medaka gather around nearby pellets, eat them, then return to normal swimming. Each click adds six pellets, with a maximum of 24 active pellets and a minimum 0.35-second interval. Uneaten pellets disappear after 24 seconds. Holding yellow A changes brightness without adding food.
+
+![Medaka gathering around food](docs/feeding.gif)
+
+*Simulation using shared firmware code, not a recording of the device.*
 
 ## Build and flash
 
@@ -61,6 +70,8 @@ Preview frames are written to `/tmp/medaka-frame-000.ppm` and subsequent numbere
 
 Verified:
 
+- Left and right feeding tests consume all six pellets within 15 seconds; rate limits, pellet capacity and expiry are checked.
+
 - Target build, USB flashing and all transferred hashes.
 - Normal boot, IMU and PSRAM initialization, advancing frame counts and gyroscope responses.
 - A ten-minute simulated acceleration, three-axis rotation and tap stress test; fish containment; wave mean displacement and decay.
@@ -68,7 +79,7 @@ Verified:
 
 Physical shake direction and appearance, touch, buttons and battery life remain unverified. Rendering is scheduled for up to approximately 30fps; actual 30fps performance has not been established. CI is not configured; the results above are local checks.
 
-Send `?` over USB serial at 115200bps for IMU state, frame count, tilt, activity, gyro Z, bulk water displacement and free heap.
+Send `?` over USB serial at 115200bps for IMU state, frame count, tilt, activity, gyro Z, bulk water displacement, remaining/eaten food counts and free heap.
 
 ## Implementation
 

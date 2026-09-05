@@ -9,6 +9,8 @@ int main() {
   for(int n=0;n<72000;++n) {
     float t=n*dt, shake=(n%3600<1200)?1.7f:0.f;
     w.sense(shake*std::sin(t*19),1+shake*std::sin(t*13),shake*std::cos(t*17),dt,shake*180*std::sin(t*11),shake*90*std::cos(t*7),shake*250*std::cos(t*19));
+    if(n%180==0) w.feed(n%360==0?155:311);
+    assert(w.foodCount()<=World::FOOD_MAX);
     if(n%719==0) w.ripple((n*37)%466,100);
     w.step(dt);
     float mean=0;
@@ -35,5 +37,17 @@ int main() {
   }
   assert(peak>25); assert(after>5); assert(std::fabs(rotation.slosh)<1);
   std::printf("Gyro-only: peak %.1f px, after-motion %.1f px\n",peak,after);
+  for(float side : {155.f,311.f}) {
+    World fed; fed.feed(side); assert(fed.foodCount()==6);
+    fed.feed(side); assert(fed.foodCount()==6); // Button spam cannot overfill.
+    for(int n=0;n<1800;++n) { fed.sense(0,1,0,dt); fed.step(dt); }
+    std::printf("Feeding at %.0f: %u eaten, %d remaining\n",side,fed.eaten,fed.foodCount());
+    assert(fed.eaten>=4); assert(fed.foodCount()<=2);
+    for(int n=0;n<1800;++n) fed.step(dt);
+    assert(fed.foodCount()==0);
+  }
+  World expiry; expiry.feed(155);
+  for(auto &p:expiry.food) if(p.life>0) {p.life=.001f;p.wet=false;}
+  expiry.step(dt); assert(expiry.foodCount()==0);
   puts("PASS: ten-minute shake/tap stress, fish containment, wave decay, volume conservation, invalid IMU input, tilt response");
 }

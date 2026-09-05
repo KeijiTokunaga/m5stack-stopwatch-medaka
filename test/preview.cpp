@@ -48,8 +48,11 @@ uint16_t color(int r,int g,int b) { float k=night?.4f:1;return (int(r*k)>>3)<<11
 int main(int argc,char**argv) {
   int count=argc>1?std::atoi(argv[1]):1;
   for(int i=0;i<480;++i) {world.sense(0,1,0,1.f/120);world.step(1.f/120);}
+  bool feedingDemo=argc>2;
   for(int n=0;n<count;++n) {
-    for(int j=0;j<6;++j) {float t=n*.05f+j/120.f; bool moving=n>25&&n<80;
+    if(feedingDemo && n==20) world.feed(155);
+    if(feedingDemo && n==150) world.feed(311);
+    for(int j=0;j<6;++j) {float t=n*.05f+j/120.f; bool moving=!feedingDemo && n>25&&n<80;
       world.sense(moving?.65f*std::sin(t*8):0,1,0,1.f/120,moving?100*std::sin(t*6):0,0,moving?210*std::cos(t*8):0);world.step(1.f/120);}
     render();char path[128];std::snprintf(path,sizeof(path),"/tmp/medaka-frame-%03d.ppm",n);frame.save(path);
   }

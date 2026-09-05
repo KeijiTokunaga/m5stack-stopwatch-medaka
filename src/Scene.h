@@ -86,6 +86,10 @@ void render() {
     float y=145+std::fmod(i*31+world.time*(1+i%3),265.f);
     if(y>world.surface(x)+9) frame.drawPixel(x,y,color(65,109,105));
   }
+  for(const auto &p:world.food) if(p.life>0) {
+    frame.fillCircle(p.x,p.y,2,color(206,157,76));
+    frame.drawPixel(p.x,p.y-1,color(245,217,137));
+  }
   for(int i=0;i<World::COUNT;++i) drawFish(world.fish[i],i);
   // Gravel sits inside the circular viewport; no rectangular tank frame.
   for(int y=418;y<466;++y) frame.drawFastHLine(0,y,466,color(31-(y-418)/5,42-(y-418)/5,35-(y-418)/5));
