@@ -18,16 +18,18 @@ A quiet aquarium with three medaka, three neon tetras and three guppies for M5St
 ## Features
 
 - Large waves and gradually decaying motion after the device stops.
-- Tail motion, burst-and-glide swimming, schooling, separation and a startle response.
+- Tail motion, burst-and-glide swimming, independent wandering, separation and a startle response.
 - Swaying plants, depth shading and subtle lighting.
 - No clock or menu overlay during viewing, and no sound or vibration.
+
+Each fish chooses its own destination, avoids crowded areas and changes course at its own pace. Fish gather only for food.
 
 ## Fish
 
 | Species | Appearance and in-app motion |
 | --- | --- |
 | Medaka × 3 | Slender silver or gold bodies with burst-and-glide swimming |
-| Neon tetra × 3 | Bright blue stripes and red accents; quicker movement and stronger same-species schooling |
+| Neon tetra × 3 | Bright blue stripes and red accents; quicker movement toward individual destinations |
 | Guppy × 3 | Broad patterned orange fan tails with slower tail beats |
 
 All species respond to food. These are stylized behaviors for the viewing experience.

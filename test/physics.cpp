@@ -56,6 +56,19 @@ int main() {
     assert(single.eatenBySpecies[static_cast<int>(species)]>=4);
     std::printf("Species %d: %u pellets eaten\n",int(species),single.eaten);
   }
+  World roaming;
+  float spread=0; int samples=0;
+  for(int n=0;n<14400;++n) {
+    roaming.sense(0,1,0,dt);roaming.step(dt);
+    if(n>2400 && n%120==0) {
+      for(int i=0;i<World::COUNT;++i) for(int j=i+1;j<World::COUNT;++j)
+        spread+=std::hypot(roaming.fish[i].x-roaming.fish[j].x,roaming.fish[i].y-roaming.fish[j].y);
+      ++samples;
+    }
+  }
+  float meanDistance=spread/(samples*36);
+  std::printf("Independent swimming: mean pair distance %.1f px\n",meanDistance);
+  assert(meanDistance>110);
   World expiry; expiry.feed(155);
   for(auto &p:expiry.food) if(p.life>0) {p.life=.001f;p.wet=false;}
   expiry.step(dt); assert(expiry.foodCount()==0);

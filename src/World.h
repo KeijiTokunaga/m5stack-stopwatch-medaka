@@ -7,15 +7,15 @@ namespace aquarium {
 constexpr float kPi = 3.14159265359f;
 inline float clamp(float v, float lo, float hi) { return std::max(lo, std::min(v, hi)); }
 enum class Species : uint8_t { Medaka, NeonTetra, Guppy };
-struct SwimStyle { float cruise, turn, cadence, schooling, restDepth; };
+struct SwimStyle { float cruise, turn, cadence; };
 inline SwimStyle swimStyle(Species s) {
   switch(s) {
-    case Species::NeonTetra: return {49,3.2f,1.25f,1.8f,245};
-    case Species::Guppy: return {34,1.9f,.72f,.65f,185};
-    default: return {42,2.5f,1,1,215};
+    case Species::NeonTetra: return {49,3.2f,1.25f};
+    case Species::Guppy: return {34,1.9f,.72f};
+    default: return {42,2.5f,1};
   }
 }
-struct Fish { float x, y, vx, vy, heading, phase, depth, urge; float bite=0; Species species=Species::Medaka; };
+struct Fish { float x, y, vx, vy, heading, phase, depth, urge; float bite=0; Species species=Species::Medaka; float roamX=233, roamY=250, roamTime=0; };
 struct Food { float x=0, y=0, life=0; bool wet=false; };
 class World {
 public:
@@ -45,6 +45,7 @@ public:
     int index=0;
     for (auto &f : fish) {
       f.species=static_cast<Species>(index++%3);
+      f.roamTime=index*.43f;
       f.x = 90 + random()*280; f.y = 155 + random()*210;
       f.heading = random()*2*kPi; f.vx = std::cos(f.heading)*20; f.vy = std::sin(f.heading)*8;
       f.phase = random()*2*kPi; f.depth = .6f + random()*.4f; f.urge = random();
@@ -114,13 +115,28 @@ public:
     }
     Fish old[COUNT]; std::copy(fish,fish+COUNT,old);
     for(int i=0;i<COUNT;++i) {
-      auto &f=fish[i]; const auto style=swimStyle(f.species); float fx=0,fy=0, mx=0,my=0,avx=0,avy=0; int neighbors=0;
+      auto &f=fish[i]; const auto style=swimStyle(f.species);
+      float fx=0,fy=0;
+      // Personal destinations: never align with or seek a school.
+      f.roamTime-=dt;
+      if(f.roamTime<=0 || std::hypot(f.roamX-f.x,f.roamY-f.y)<22) {
+        float best=-1;
+        for(int candidate=0;candidate<12;++candidate) {
+          float x=75+random()*316,y=150+random()*235;
+          if(std::hypot(x-233,y-233)>175 || y<surface(x)+45)continue;
+          float space=1e9f;
+          for(int j=0;j<COUNT;++j) if(i!=j) {
+            space=std::min(space,std::hypot(x-old[j].x,y-old[j].y));
+            space=std::min(space,std::hypot(x-old[j].roamX,y-old[j].roamY)*.8f);
+          }
+          if(space>best) { best=space;f.roamX=x;f.roamY=y; }
+        }
+        f.roamTime=4+random()*6;
+      }
       for(int j=0;j<COUNT;++j) if(i!=j) {
         float dx=old[j].x-f.x,dy=old[j].y-f.y,d2=dx*dx+dy*dy;
-        if(d2<150*150 && old[j].species==f.species) { mx+=old[j].x; my+=old[j].y; avx+=old[j].vx; avy+=old[j].vy; ++neighbors; }
-        if(d2<42*42) { fx-=dx*150/(d2+16); fy-=dy*150/(d2+16); }
+        if(d2<65*65) { fx-=dx*240/(d2+25); fy-=dy*240/(d2+25); }
       }
-      if(neighbors) { fx+=((mx/neighbors-f.x)*.08f+(avx/neighbors-f.vx)*.16f)*style.schooling; fy+=((my/neighbors-f.y)*.07f+(avy/neighbors-f.vy)*.12f)*style.schooling; }
       f.bite=std::max(0.f,f.bite-dt);
       int targetFood=-1; float nearest=1e9f;
       for(int j=0;j<FOOD_MAX;++j) if(food[j].life>0 && food[j].wet) {
@@ -137,7 +153,12 @@ public:
           fy+=((p.y-f.y)/std::max(1.f,d)*desired-f.vy)*2.8f;
         }
       }
-      if(!feeding) fy+=(style.restDepth-f.y)*.035f;
+      if(!feeding) {
+        float dx=f.roamX-f.x,dy=f.roamY-f.y,d=std::max(1.f,std::hypot(dx,dy));
+        float pace=style.cruise*(.52f+.16f*std::sin(time*.55f+i*2));
+        fx+=(dx/d*pace-f.vx)*.65f;
+        fy+=(dy/d*pace-f.vy)*.65f;
+      }
       float radial=std::sqrt((f.x-233)*(f.x-233)+(f.y-233)*(f.y-233));
       if(radial>166) { fx-=(f.x-233)*(radial-166)*.025f; fy-=(f.y-233)*(radial-166)*.025f; }
       float top=surface(f.x)+(feeding?0:32);
