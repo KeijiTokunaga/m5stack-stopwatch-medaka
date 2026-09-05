@@ -4,7 +4,14 @@
 
 A quiet aquarium with nine medaka for M5Stack StopWatch C152. Accelerometer and three-axis gyroscope input make the water and plants respond to shaking and twisting the device.
 
-![Aquarium motion preview](docs/preview.gif)
+![Aquarium preview](docs/preview.png)
+
+<details>
+<summary>View animated preview</summary>
+
+![Aquarium preview](docs/preview.gif)
+
+</details>
 
 *Rendered using the simulation and scene code shared with the firmware. This is not a photograph or recording of the device.*
 
