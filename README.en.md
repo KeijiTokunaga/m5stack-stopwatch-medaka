@@ -2,7 +2,7 @@
 
 # Medaka — A palm-sized aquarium
 
-A quiet aquarium with three medaka, three neon tetras and three guppies for M5Stack StopWatch C152. Accelerometer and three-axis gyroscope input make the water and plants respond to shaking and twisting the device.
+A quiet aquarium with three medaka, three neon tetras, three guppies and one larger angelfish for M5Stack StopWatch C152. Accelerometer and three-axis gyroscope input make the water and plants respond to shaking and twisting the device.
 
 ![Aquarium preview](docs/preview.png)
 
@@ -48,8 +48,9 @@ Small bubbles rise between the plants and pop at the surface, while highlights t
 | Medaka × 3 | Slender silver or gold bodies with burst-and-glide swimming |
 | Neon tetra × 3 | Bright blue stripes and red accents; quicker movement toward individual destinations |
 | Guppy × 3 | Broad patterned orange fan tails with slower tail beats |
+| Angelfish × 1 | A larger silver striped body, long fins and unhurried swimming |
 
-All species respond to food. These are stylized behaviors for the viewing experience.
+All four species respond to food. These are stylized behaviors for the viewing experience.
 
 ## Controls
 
@@ -67,9 +68,9 @@ Settings are not persisted: restarting returns to normal viewing with automatic 
 
 ## Feeding
 
-Pellets fall into the water and slowly sink. All three species gather around nearby pellets, eat them, then return to normal swimming. Each click adds six pellets, with a maximum of 24 active pellets and a minimum 0.35-second interval. Uneaten pellets disappear after 24 seconds. Holding yellow A changes brightness without adding food.
+Pellets fall into the water and slowly sink. All four species gather around nearby pellets, eat them, then return to normal swimming. Each click adds six pellets, with a maximum of 24 active pellets and a minimum 0.35-second interval. Uneaten pellets disappear after 24 seconds. Holding yellow A changes brightness without adding food.
 
-![Three species gathering around food](docs/feeding.gif)
+![Four species gathering around food](docs/feeding.gif)
 
 *Simulation using shared firmware code, not a recording of the device.*
 

@@ -26,6 +26,30 @@ void drawFish(const Fish &f,int index) {
   auto tri=[&](float ax,float ay,float bx,float by,float cx,float cy,uint16_t c) {
     auto a=point(ax,ay),b=point(bx,by),d=point(cx,cy); frame.fillTriangle(a.first,a.second,b.first,b.second,d.first,d.second,c);
   };
+  if(f.species==Species::Angelfish) {
+    // Tall silver silhouette with trailing fins, rendered in local fish coordinates.
+    float sway=std::sin(f.phase)*4;
+    tri(-17,0,-39,-13+sway,-37,14+sway,color(114,165,171));
+    tri(-6,-13,-15,-46,-23,-7,color(145,186,188));
+    tri(-5,13,-17,45,-22,7,color(126,171,178));
+    tri(23,0,0,-24,-23,0,color(209,221,208));
+    tri(23,0,-23,0,-1,24,color(178,203,196));
+    tri(-9,-17,-3,-22,-4,22,color(48,78,88));
+    tri(-9,-17,-4,22,-11,15,color(48,78,88));
+    tri(6,-16,10,-12,9,14,color(66,94,100));
+    tri(6,-16,9,14,5,18,color(66,94,100));
+    for(int j=0;j<3;++j) {
+      auto a=point(-9-j*3,-15),b=point(-15-j*2,-39+j*6);
+      frame.drawLine(a.first,a.second,b.first,b.second,color(175,205,202));
+    }
+    for(int j=0;j<2;++j) {
+      auto a=point(7-j*7,13),b=point(-6-j*8,46+sway);
+      frame.drawLine(a.first,a.second,b.first,b.second,color(210,221,189));
+    }
+    auto eye=point(16,-5);frame.fillCircle(eye.first,eye.second,3,color(221,177,71));
+    frame.fillCircle(eye.first,eye.second,1,color(12,29,37));
+    return;
+  }
   bool gold=index%2==0;
   uint16_t fin=gold?color(119,115,66):color(72,119,117);
   uint16_t body=gold?color(206*sc,174*sc,94*sc):color(162*sc,192*sc,180*sc);
