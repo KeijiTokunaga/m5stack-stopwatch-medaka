@@ -108,6 +108,20 @@ void render() {
     float y=145+std::fmod(i*31+world.time*(1+i%3),265.f);
     if(y>world.surface(x)+9) frame.drawPixel(x,y,color(65,109,105));
   }
+  for(const auto &b:world.bubbles) {
+    if(b.pop>0) {
+      float r=(.45f-b.pop)*19;
+      frame.drawEllipse(b.x,world.surface(b.x)+2,2+r,1+r*.22f,color(64,116,116));
+    } else {
+      frame.drawEllipse(b.x,b.y,b.radius,b.radius+1,color(46,103,110));
+      frame.drawPixel(b.x-1,b.y-1,color(149,199,190));
+    }
+  }
+  // Traveling highlights trace the actual free surface.
+  for(int i=0;i<5;++i) {
+    int x=45+int(std::fmod(world.time*9+i*83,375.f));
+    for(int j=0;j<14;++j) frame.drawPixel(x+j,world.surface(x+j)+1,color(175,210,190));
+  }
   for(const auto &p:world.food) if(p.life>0) {
     frame.fillCircle(p.x,p.y,2,color(206,157,76));
     frame.drawPixel(p.x,p.y-1,color(245,217,137));
@@ -127,6 +141,13 @@ void render() {
     frame.fillCircle(233+std::cos(a)*222,233+std::sin(a)*222,1,color(83,117,113));
   }
   if(!imu) { frame.setTextColor(color(143,164,156)); frame.setTextDatum(middle_center); frame.drawString("IMU unavailable",233,390,2); }
+  if(world.lightNotice>0) {
+    frame.drawEllipse(233,58,12,12,color(143,187,177));
+    if(world.lightFrozen) {
+      frame.drawFastVLine(230,53,10,color(189,224,203));
+      frame.drawFastVLine(236,53,10,color(189,224,203));
+    } else frame.fillTriangle(230,52,230,64,239,58,color(189,224,203));
+  }
   frame.pushSprite(0,0);
   ++frames;
 }

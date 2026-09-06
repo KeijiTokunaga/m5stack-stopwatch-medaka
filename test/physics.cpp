@@ -69,6 +69,16 @@ int main() {
   float meanDistance=spread/(samples*36);
   std::printf("Independent swimming: mean pair distance %.1f px\n",meanDistance);
   assert(meanDistance>110);
+  World ambience;
+  ambience.updateLight(60);assert(std::fabs(ambience.tint[1]-1.12f)<.001f);
+  ambience.toggleLight();float saved=ambience.lightClock;
+  ambience.updateLight(10);assert(ambience.lightClock==saved);
+  ambience.toggleLight();ambience.updateLight(180);assert(ambience.lightClock==0);
+  for(int n=0;n<30000;++n) {
+    ambience.step(dt);
+    for(auto b:ambience.bubbles)assert(std::isfinite(b.x+b.y+b.pop) && b.x>=80 && b.x<=386 && b.y<=410);
+  }
+  puts("PASS: lighting cycle, freeze/resume and bubble recycling");
   World expiry; expiry.feed(155);
   for(auto &p:expiry.food) if(p.life>0) {p.life=.001f;p.wet=false;}
   expiry.step(dt); assert(expiry.foodCount()==0);

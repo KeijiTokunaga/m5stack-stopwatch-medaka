@@ -24,6 +24,23 @@ A quiet aquarium with three medaka, three neon tetras and three guppies for M5St
 
 Each fish chooses its own destination, avoids crowded areas and changes course at its own pace. Fish gather only for food.
 
+## Light and bubbles
+
+Warm dawn, clear daylight, violet dusk and blue night blend through a four-minute cycle. This is an artistic cycle, not synchronized with real-world time.
+
+Small bubbles rise between the plants and pop at the surface, while highlights travel along the waterline. Hold the screen to keep the current lighting; hold again to resume. Fish, bubbles and waves continue moving. A small freeze/resume indicator appears for only two seconds.
+
+![Dawn, day, dusk and night](docs/ambience.png)
+
+<details>
+<summary>Watch the lighting change</summary>
+
+![Lighting and bubbles preview](docs/ambience.gif)
+
+</details>
+
+*Shared-code simulation. The GIF compresses four minutes of lighting changes into twelve seconds.*
+
 ## Fish
 
 | Species | Appearance and in-app motion |
@@ -41,11 +58,12 @@ All species respond to food. These are stylized behaviors for the viewing experi
 | Tilt sideways | Tilt the free surface |
 | Shake or twist | Excite waves using acceleration and angular velocity |
 | Tap the screen | Create a ripple at that horizontal position |
+| Hold the screen | Freeze / resume the lighting cycle |
 | Click yellow A | Drop six food pellets on the left |
 | Hold yellow A | Toggle normal / dim viewing |
 | Click blue B | Drop six food pellets on the right |
 
-Settings are not persisted: restarting returns to normal viewing. If IMU initialization fails, a message appears while autonomous swimming and touch ripples remain available.
+Settings are not persisted: restarting returns to normal viewing with automatic dawn lighting. If IMU initialization fails, a message appears while autonomous swimming and touch ripples remain available.
 
 ## Feeding
 
@@ -81,6 +99,8 @@ c++ -std=c++17 -O2 test/preview.cpp -o /tmp/medaka-preview
 Preview frames are written to `/tmp/medaka-frame-000.ppm` and subsequent numbered files.
 
 Verified:
+
+- Lighting wraparound, freeze/resume and repeated bubble recycling.
 
 - Each species in isolation consumes all six pellets within 15 seconds; the mixed population passes the ten-minute stress simulation.
 - Left and right feeding tests consume all six pellets within 15 seconds; rate limits, pellet capacity and expiry are checked.

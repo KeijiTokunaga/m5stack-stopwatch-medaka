@@ -16,6 +16,7 @@ inline SwimStyle swimStyle(Species s) {
   }
 }
 struct Fish { float x, y, vx, vy, heading, phase, depth, urge; float bite=0; Species species=Species::Medaka; float roamX=233, roamY=250, roamTime=0; };
+struct Bubble { float x=0, y=0, radius=2, pop=0; };
 struct Food { float x=0, y=0, life=0; bool wet=false; };
 class World {
 public:
@@ -26,6 +27,19 @@ public:
   float slosh=0, sloshSpeed=0, forcing=0, crossForcing=0;
   Fish fish[COUNT];
   Food food[FOOD_MAX];
+  Bubble bubbles[8];
+  float lightClock=0, tint[3]={1.12f,.92f,.72f}, lightNotice=0;
+  bool lightFrozen=false;
+  void toggleLight() { lightFrozen=!lightFrozen; lightNotice=2; }
+  void updateLight(float dt) {
+    if(!lightFrozen) lightClock=std::fmod(lightClock+dt,240.f);
+    lightNotice=std::max(0.f,lightNotice-dt);
+    // Four-minute artistic light cycle, independent of wall clock or network.
+    const float colors[4][3]={{1.12f,.92f,.72f},{.85f,1.12f,1.10f},{1.20f,.70f,.85f},{.40f,.57f,.92f}};
+    float phase=lightClock/60; int a=int(phase)%4,b=(a+1)%4;
+    float t=phase-int(phase); t=t*t*(3-2*t);
+    for(int c=0;c<3;++c) tint[c]=colors[a][c]*(1-t)+colors[b][c]*t;
+  }
   unsigned eaten=0;
   unsigned eatenBySpecies[3]{};
   float feedCooldown=0;
@@ -42,6 +56,7 @@ public:
   uint32_t seed = 0x4d454441;
   float random() { seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5; return (seed & 0xffffff) / 16777216.f; }
   World() {
+    for(int i=0;i<8;++i) { bubbles[i].x=i%2?342:112;bubbles[i].y=155+i*32;bubbles[i].radius=1+i%3; }
     int index=0;
     for (auto &f : fish) {
       f.species=static_cast<Species>(index++%3);
@@ -85,6 +100,7 @@ public:
     alarm = std::max(alarm, clamp(impulse*.7f,0,1));
   }
   void step(float dt) {
+    updateLight(dt);
     time += dt; alarm *= std::exp(-dt*1.4f);
     sloshSpeed+=(forcing-slosh*22-sloshSpeed*1.5f)*dt;
     slosh+=sloshSpeed*dt;
@@ -112,6 +128,17 @@ public:
         p.y=std::max(surface(p.x)+26,p.y+2.8f*dt);
       }
       if(p.y>395) p.life=0;
+    }
+    for(int i=0;i<8;++i) {
+      auto &b=bubbles[i];
+      if(b.pop>0) {
+        b.pop-=dt;
+        if(b.pop<=0) { b.x=i%2?342:112;b.y=409; }
+      } else {
+        b.x=clamp(b.x+(std::sin(time*1.7f+i)*3+current*.035f)*dt,80,386);
+        b.y-=(15+b.radius*4)*dt;
+        if(b.y<=surface(b.x)+5) { b.y=surface(b.x)+2;b.pop=.45f; }
+      }
     }
     Fish old[COUNT]; std::copy(fish,fish+COUNT,old);
     for(int i=0;i<COUNT;++i) {

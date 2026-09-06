@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <utility>
 #include <cstdlib>
+#include <string>
 using namespace aquarium;
 struct Raster {
   uint16_t pixels[466*466]{};
@@ -43,17 +44,19 @@ World world;
 bool imu=true,night=false;
 unsigned frames=0;
 constexpr int middle_center=0;
-uint16_t color(int r,int g,int b) { float k=night?.4f:1;return (int(r*k)>>3)<<11|(int(g*k)>>2)<<5|(int(b*k)>>3); }
+uint16_t color(int r,int g,int b) { float k=night?.4f:1;return (int(clamp(r*k*world.tint[0],0,255))>>3)<<11|(int(clamp(g*k*world.tint[1],0,255))>>2)<<5|(int(clamp(b*k*world.tint[2],0,255))>>3); }
 #include "../src/Scene.h"
 int main(int argc,char**argv) {
   int count=argc>1?std::atoi(argv[1]):1;
   for(int i=0;i<480;++i) {world.sense(0,1,0,1.f/120);world.step(1.f/120);}
-  bool feedingDemo=argc>2;
+  bool ambientDemo=argc>2 && std::string(argv[2])=="ambient";
+  bool feedingDemo=argc>2 && !ambientDemo;
   for(int n=0;n<count;++n) {
     if(feedingDemo && n==20) world.feed(155);
     if(feedingDemo && n==150) world.feed(311);
-    for(int j=0;j<6;++j) {float t=n*.05f+j/120.f; bool moving=!feedingDemo && n>25&&n<80;
+    for(int j=0;j<6;++j) {float t=n*.05f+j/120.f; bool moving=!ambientDemo && !feedingDemo && n>25&&n<80;
       world.sense(moving?.65f*std::sin(t*8):0,1,0,1.f/120,moving?100*std::sin(t*6):0,0,moving?210*std::cos(t*8):0);world.step(1.f/120);}
+    if(ambientDemo) { world.lightClock=n*240.f/count;world.updateLight(0); }
     render();char path[128];std::snprintf(path,sizeof(path),"/tmp/medaka-frame-%03d.ppm",n);frame.save(path);
   }
 }

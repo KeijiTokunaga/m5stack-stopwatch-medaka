@@ -7,7 +7,7 @@ bool ready=false, imu=false, night=false;
 uint32_t previous=0, lastFrame=0, frames=0;
 float accumulator=0;
 uint16_t rgb(int r,int g,int b) { return M5.Display.color565(r,g,b); }
-uint16_t color(int r,int g,int b) { float k=night?.40f:1.f; return rgb(r*k,g*k,b*k); }
+uint16_t color(int r,int g,int b) { float k=night?.40f:1.f; return rgb(clamp(r*k*world.tint[0],0,255),clamp(g*k*world.tint[1],0,255),clamp(b*k*world.tint[2],0,255)); }
 
 #include "Scene.h"
 
@@ -35,13 +35,14 @@ void loop() {
   if(M5.BtnA.wasHold()) { night=!night; M5.Display.setBrightness(night?70:150); }
   if(M5.BtnB.wasClicked()) world.feed(311);
   auto touch=M5.Touch.getDetail();
+  if(touch.wasHold()) world.toggleLight();
   if(touch.wasClicked()) world.ripple(touch.x,125);
   accumulator+=elapsed;
   while(accumulator>=1.f/120) { world.step(1.f/120); accumulator-=1.f/120; }
   if(now-lastFrame>=33) { lastFrame=now; render(); }
   if(Serial.available()) {
     char c=Serial.read();
-    if(c=='?') Serial.printf("MEDAKA imu=%d frames=%lu tilt=%.3f activity=%.3f gyroZ=%.1f slosh=%.1f food=%d eaten=%u heap=%u\n",imu,(unsigned long)frames,world.tilt,world.activity,world.rollRate,world.slosh,world.foodCount(),world.eaten,ESP.getFreeHeap());
+    if(c=='?') Serial.printf("MEDAKA imu=%d frames=%lu tilt=%.3f activity=%.3f gyroZ=%.1f slosh=%.1f food=%d eaten=%u light=%.1f fixed=%d heap=%u\n",imu,(unsigned long)frames,world.tilt,world.activity,world.rollRate,world.slosh,world.foodCount(),world.eaten,world.lightClock,world.lightFrozen,ESP.getFreeHeap());
   }
   delay(1);
 }
