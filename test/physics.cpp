@@ -4,8 +4,8 @@
 using namespace aquarium;
 int main() {
   World w;
-  int population[4]{};for(auto &f:w.fish)++population[static_cast<int>(f.species)];
-  for(int i=0;i<3;++i)assert(population[i]==3);assert(population[3]==1);
+  int population[3]{};for(auto &f:w.fish)++population[static_cast<int>(f.species)];
+  for(int n:population)assert(n==3);
   constexpr float dt=1.f/120;
   // Ten minutes: alternating violent shaking and rest, plus repeated taps.
   for(int n=0;n<72000;++n) {
@@ -48,7 +48,7 @@ int main() {
     for(int n=0;n<1800;++n) fed.step(dt);
     assert(fed.foodCount()==0);
   }
-  for(auto species : {Species::Medaka,Species::NeonTetra,Species::Guppy,Species::Angelfish}) {
+  for(auto species : {Species::Medaka,Species::NeonTetra,Species::Guppy}) {
     World single;
     for(auto &f:single.fish) f.species=species;
     single.feed(233);
@@ -66,7 +66,7 @@ int main() {
       ++samples;
     }
   }
-  float meanDistance=spread/(samples*(World::COUNT*(World::COUNT-1)/2));
+  float meanDistance=spread/(samples*36);
   std::printf("Independent swimming: mean pair distance %.1f px\n",meanDistance);
   assert(meanDistance>110);
   World ambience;

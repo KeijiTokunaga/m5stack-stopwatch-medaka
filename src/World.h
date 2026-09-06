@@ -6,12 +6,11 @@
 namespace aquarium {
 constexpr float kPi = 3.14159265359f;
 inline float clamp(float v, float lo, float hi) { return std::max(lo, std::min(v, hi)); }
-enum class Species : uint8_t { Medaka, NeonTetra, Guppy, Angelfish };
+enum class Species : uint8_t { Medaka, NeonTetra, Guppy };
 struct SwimStyle { float cruise, turn, cadence; };
 inline SwimStyle swimStyle(Species s) {
   switch(s) {
     case Species::NeonTetra: return {49,3.2f,1.25f};
-    case Species::Angelfish: return {25,1.3f,.55f};
     case Species::Guppy: return {34,1.9f,.72f};
     default: return {42,2.5f,1};
   }
@@ -21,7 +20,7 @@ struct Bubble { float x=0, y=0, radius=2, pop=0; };
 struct Food { float x=0, y=0, life=0; bool wet=false; };
 class World {
 public:
-  static constexpr int N = 65, COUNT = 10, FOOD_MAX = 24;
+  static constexpr int N = 65, COUNT = 9, FOOD_MAX = 24;
   float wave[N]{}, velocity[N]{}, time = 0, tilt = 0, current = 0, alarm = 0;
   float gx = 0, gy = 1, gz = 0, activity = 0;
   float rollRate=0, pitchRate=0, yawRate=0, rotationalKick=0;
@@ -42,7 +41,7 @@ public:
     for(int c=0;c<3;++c) tint[c]=colors[a][c]*(1-t)+colors[b][c]*t;
   }
   unsigned eaten=0;
-  unsigned eatenBySpecies[4]{};
+  unsigned eatenBySpecies[3]{};
   float feedCooldown=0;
   int foodCount() const { int n=0; for(const auto &p:food) if(p.life>0) ++n; return n; }
   void feed(float x) {
@@ -60,13 +59,11 @@ public:
     for(int i=0;i<8;++i) { bubbles[i].x=i%2?342:112;bubbles[i].y=155+i*32;bubbles[i].radius=1+i%3; }
     int index=0;
     for (auto &f : fish) {
-      f.species=index==9?Species::Angelfish:static_cast<Species>(index%3);
-      ++index;
+      f.species=static_cast<Species>(index++%3);
       f.roamTime=index*.43f;
       f.x = 90 + random()*280; f.y = 155 + random()*210;
       f.heading = random()*2*kPi; f.vx = std::cos(f.heading)*20; f.vy = std::sin(f.heading)*8;
       f.phase = random()*2*kPi; f.depth = .6f + random()*.4f; f.urge = random();
-      if(f.species==Species::Angelfish) { f.x=270;f.y=290;f.depth=1;f.heading=.12f;f.vx=12;f.vy=0; }
     }
   }
   float surface(float x) const {
@@ -170,8 +167,7 @@ public:
       f.bite=std::max(0.f,f.bite-dt);
       int targetFood=-1; float nearest=1e9f;
       for(int j=0;j<FOOD_MAX;++j) if(food[j].life>0 && food[j].wet) {
-        float mouthY=f.y-(f.species==Species::Angelfish?28.f:0.f);
-        float dx=food[j].x-f.x,dy=food[j].y-mouthY,d2=dx*dx+dy*dy;
+        float dx=food[j].x-f.x,dy=food[j].y-f.y,d2=dx*dx+dy*dy;
         if(d2<nearest) { nearest=d2; targetFood=j; }
       }
       bool feeding=targetFood>=0;
@@ -179,10 +175,9 @@ public:
         auto &p=food[targetFood]; float d=std::sqrt(nearest);
         if(d<17 && f.bite<=0) { p.life=0; ++eaten; ++eatenBySpecies[static_cast<int>(f.species)]; f.bite=.65f; }
         else {
-          float targetY=p.y+(f.species==Species::Angelfish?28.f:0.f);
-          float desired=std::min(f.species==Species::Angelfish?46.f:68.f,d*2.4f);
+          float desired=std::min(68.f,d*2.4f);
           fx+=((p.x-f.x)/std::max(1.f,d)*desired-f.vx)*2.8f;
-          fy+=((targetY-f.y)/std::max(1.f,d)*desired-f.vy)*2.8f;
+          fy+=((p.y-f.y)/std::max(1.f,d)*desired-f.vy)*2.8f;
         }
       }
       if(!feeding) {
@@ -207,11 +202,10 @@ public:
       if(speed>2) { float delta=std::atan2(f.vy,f.vx)-f.heading; delta=std::atan2(std::sin(delta),std::cos(delta)); f.heading+=clamp(delta,-dt*style.turn,dt*style.turn); }
       f.x+=f.vx*dt; f.y+=f.vy*dt;
       float dx=f.x-233,dy=f.y-233,d=std::sqrt(dx*dx+dy*dy);
-      float boundary=f.species==Species::Angelfish?172.f:199.f;
-      if(d>boundary) { f.x=233+dx*boundary/d; f.y=233+dy*boundary/d; }
-      f.x=clamp(f.x,233-boundary+11,233+boundary-11);
-      float edge=std::sqrt(boundary*boundary-(f.x-233)*(f.x-233));
-      f.y=clamp(f.y,std::max(surface(f.x)+(f.species==Species::Angelfish?48:20),233-edge),std::min(413.f,233+edge));
+      if(d>199) { f.x=233+dx*199/d; f.y=233+dy*199/d; }
+      f.x=clamp(f.x,45,421);
+      float edge=std::sqrt(199*199-(f.x-233)*(f.x-233));
+      f.y=clamp(f.y,std::max(surface(f.x)+20,233-edge),std::min(413.f,233+edge));
       f.phase+=dt*(6+speed*.18f+burst*5)*style.cadence;
     }
   }
