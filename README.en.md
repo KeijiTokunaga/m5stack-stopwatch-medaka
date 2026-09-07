@@ -43,7 +43,7 @@ Small bubbles rise between the plants and pop at the surface, while highlights t
 
 ## Battery screen
 
-Hold yellow A to open a dedicated battery percentage screen; click yellow A to return without feeding. The voltage-based estimate refreshes once per second, with `--` for unavailable readings. Releasing a long press leaves the screen open. Feeding and touch ripples are disabled on this screen while the aquarium simulation continues in the background.
+Hold yellow A to open a dedicated battery percentage screen; click yellow A to return without feeding. The voltage-based estimate refreshes once per second, with `--` until the first valid reading. While not charging, higher readings are ignored and only decreases are accepted. Increases are allowed during charging; invalid readings retain the last valid value. Sampling continues once per second on both screens. Values are retained in RAM across screen changes; a reboot starts from the first valid reading. Releasing a long press leaves the screen open. Feeding and touch ripples are disabled on this screen while the aquarium simulation continues in the background.
 
 ## Automatic energy saving
 

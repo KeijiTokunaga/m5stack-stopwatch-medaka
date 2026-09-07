@@ -2,11 +2,14 @@
 #include "World.h"
 #include "Energy.h"
 #include "Screens.h"
+#include "Battery.h"
 using namespace aquarium;
 M5Canvas frame(&M5.Display);
 World world;
 Energy energy;
 Screens screens;
+Battery battery;
+bool batteryCharging=false;
 int batteryLevel=-1;
 uint32_t lastBatteryRead=0;
 int appliedBrightness=150;
@@ -17,6 +20,12 @@ uint16_t rgb(int r,int g,int b) { return M5.Display.color565(r,g,b); }
 uint16_t color(int r,int g,int b) { float k=night?.40f:1.f; return rgb(clamp(r*k*world.tint[0],0,255),clamp(g*k*world.tint[1],0,255),clamp(b*k*world.tint[2],0,255)); }
 
 #include "Scene.h"
+
+void readBattery(uint32_t now) {
+  batteryCharging=M5.Power.isCharging()==m5::Power_Class::is_charging_t::is_charging;
+  batteryLevel=battery.update(M5.Power.getBatteryLevel(),batteryCharging);
+  lastBatteryRead=now;
+}
 
 void renderBattery() {
   frame.fillSprite(rgb(8,19,25));
@@ -31,7 +40,7 @@ void renderBattery() {
   String value=batteryLevel<0?String("--"):String(batteryLevel)+"%";
   frame.setTextSize(3);frame.drawString(value,233,275,4);frame.setTextSize(1);
   frame.setTextColor(rgb(133,161,156));
-  frame.drawString(batteryLevel<0?"UNAVAILABLE":"ESTIMATED",233,331,2);
+  frame.drawString(batteryLevel<0?"UNAVAILABLE":batteryCharging?"CHARGING":"ESTIMATED",233,331,2);
   frame.setTextColor(rgb(231,203,100));
   frame.drawString("YELLOW: BACK",233,374,2);
   frame.pushSprite(0,0);++frames;
@@ -45,7 +54,7 @@ void setup() {
   ready=frame.createSprite(466,466)!=nullptr;
   if(!ready) { M5.Display.fillScreen(TFT_BLACK); M5.Display.setTextDatum(middle_center); M5.Display.drawString("PSRAM allocation failed",233,233,2); return; }
   imu=M5.Imu.isEnabled(); previous=millis(); energy.begin(previous);
-  batteryLevel=M5.Power.getBatteryLevel();lastBatteryRead=previous;
+  readBattery(previous);
   Serial.printf("MEDAKA ready imu=%d psram=%u\n",imu,ESP.getPsramSize());
 }
 void loop() {
@@ -69,10 +78,7 @@ void loop() {
     if(touch.wasClicked()) world.ripple(touch.x,125);
   }
   bool screenChanged=wasBattery!=screens.battery;
-  if(screens.battery && (screenChanged || now-lastBatteryRead>=1000)) {
-    batteryLevel=M5.Power.getBatteryLevel();lastBatteryRead=now;
-    if(batteryLevel>100)batteryLevel=100;
-  }
+  if((screens.battery && screenChanged) || now-lastBatteryRead>=1000) readBattery(now);
   energy.update(now,moved || M5.BtnA.isPressed() || M5.BtnB.isPressed()
     || screenChanged || touch.isPressed() || touch.wasClicked() || world.foodCount()>0);
   int brightness=energy.brightness(night);
@@ -84,7 +90,7 @@ void loop() {
   }
   if(Serial.available()) {
     char c=Serial.read();
-    if(c=='?') Serial.printf("MEDAKA imu=%d frames=%lu tilt=%.3f activity=%.3f gyroZ=%.1f slosh=%.1f food=%d eaten=%u light=%.1f fixed=%d eco=%d brightness=%d screen=%s battery=%d heap=%u\n",imu,(unsigned long)frames,world.tilt,world.activity,world.rollRate,world.slosh,world.foodCount(),world.eaten,world.lightClock,world.lightFrozen,energy.eco,appliedBrightness,screens.battery?"battery":"aquarium",batteryLevel,ESP.getFreeHeap());
+    if(c=='?') Serial.printf("MEDAKA imu=%d frames=%lu tilt=%.3f activity=%.3f gyroZ=%.1f slosh=%.1f food=%d eaten=%u light=%.1f fixed=%d eco=%d brightness=%d screen=%s battery=%d charging=%d heap=%u\n",imu,(unsigned long)frames,world.tilt,world.activity,world.rollRate,world.slosh,world.foodCount(),world.eaten,world.lightClock,world.lightFrozen,energy.eco,appliedBrightness,screens.battery?"battery":"aquarium",batteryLevel,batteryCharging,ESP.getFreeHeap());
   }
   delay(energy.loopDelay());
 }
