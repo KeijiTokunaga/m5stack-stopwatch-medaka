@@ -41,6 +41,19 @@ Small bubbles rise between the plants and pop at the surface, while highlights t
 
 *Shared-code simulation. The GIF compresses four minutes of lighting changes into twelve seconds.*
 
+## Automatic energy saving
+
+After 60 seconds without interaction or device movement, the display dims and rendering is limited to five frames per second. Fish, bubbles and lighting keep simulating at the same speed. The screen stays on.
+
+Touch the screen, press either button or move the device to restore normal viewing. Active food keeps the display awake. The manually selected dim-viewing brightness is restored when appropriate.
+
+Brightness settings change from 150 to 45, or 70 to 22 in dim viewing (on the 0–255 scale). Longer idle loop delays reduce unnecessary polling. These are brightness and rendering reductions; current draw and battery-life improvements have not been measured. Restarting begins in normal viewing.
+
+```sh
+c++ -std=c++17 -O2 test/energy.cpp -o /tmp/medaka-energy
+/tmp/medaka-energy
+```
+
 ## Fish
 
 | Species | Appearance and in-app motion |
@@ -112,7 +125,7 @@ Verified:
 
 Physical shake direction and appearance, touch, buttons and battery life remain unverified. Rendering is scheduled for up to approximately 30fps; actual 30fps performance has not been established. CI is not configured; the results above are local checks.
 
-Send `?` over USB serial at 115200bps for IMU state, frame count, tilt, activity, gyro Z, bulk water displacement, remaining/eaten food counts and free heap.
+Send `?` over USB serial at 115200bps for IMU state, frame count, tilt, activity, gyro Z, bulk water displacement, remaining/eaten food counts, energy-saving state, brightness and free heap.
 
 ## Implementation
 
