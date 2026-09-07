@@ -41,13 +41,17 @@ Small bubbles rise between the plants and pop at the surface, while highlights t
 
 *Shared-code simulation. The GIF compresses four minutes of lighting changes into twelve seconds.*
 
+## Battery screen
+
+Hold yellow A to open a dedicated battery percentage screen; click yellow A to return without feeding. The voltage-based estimate refreshes once per second, with `--` for unavailable readings. Releasing a long press leaves the screen open. Feeding and touch ripples are disabled on this screen while the aquarium simulation continues in the background.
+
 ## Automatic energy saving
 
 After 60 seconds without interaction or device movement, the display dims and rendering is limited to five frames per second. Fish, bubbles and lighting keep simulating at the same speed. The screen stays on.
 
-Touch the screen, press either button or move the device to restore normal viewing. Active food keeps the display awake. The manually selected dim-viewing brightness is restored when appropriate.
+Touch the screen, press either button or move the device to restore normal viewing. Active food keeps the display awake. The battery screen also dims when idle.
 
-Brightness settings change from 150 to 45, or 70 to 22 in dim viewing (on the 0–255 scale). Longer idle loop delays reduce unnecessary polling. These are brightness and rendering reductions; current draw and battery-life improvements have not been measured. Restarting begins in normal viewing.
+Brightness settings change from 150 to 45 (on the 0–255 scale). Longer idle loop delays reduce unnecessary polling. These are brightness and rendering reductions; current draw and battery-life improvements have not been measured. Restarting begins in normal viewing.
 
 ```sh
 c++ -std=c++17 -O2 test/energy.cpp -o /tmp/medaka-energy
@@ -73,14 +77,15 @@ All species respond to food. These are stylized behaviors for the viewing experi
 | Tap the screen | Create a ripple at that horizontal position |
 | Hold the screen | Freeze / resume the lighting cycle |
 | Click yellow A | Drop six food pellets on the left |
-| Hold yellow A | Toggle normal / dim viewing |
+| Hold yellow A | Open battery screen |
+| Click yellow A on battery screen | Return to aquarium without feeding |
 | Click blue B | Drop six food pellets on the right |
 
 Settings are not persisted: restarting returns to normal viewing with automatic dawn lighting. If IMU initialization fails, a message appears while autonomous swimming and touch ripples remain available.
 
 ## Feeding
 
-Pellets fall into the water and slowly sink. All three species gather around nearby pellets, eat them, then return to normal swimming. Each click adds six pellets, with a maximum of 24 active pellets and a minimum 0.35-second interval. Uneaten pellets disappear after 24 seconds. Holding yellow A changes brightness without adding food.
+Pellets fall into the water and slowly sink. All three species gather around nearby pellets, eat them, then return to normal swimming. Each click adds six pellets, with a maximum of 24 active pellets and a minimum 0.35-second interval. Uneaten pellets disappear after 24 seconds. Holding yellow A opens the battery screen without adding food.
 
 ![Three species gathering around food](docs/feeding.gif)
 
